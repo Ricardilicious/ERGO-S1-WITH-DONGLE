@@ -1,0 +1,31 @@
+# Ergo S1 — nice!nano v2 on both halves (no displays) + nice!nano dongle.
+#
+# Default: dongle mode (third nice!nano is the central, both halves are peripherals).
+# For standalone mode (no dongle), comment out the dongle block and use the
+# "standalone" block at the bottom instead.
+---
+include:
+  # ---------- Dongle mode ----------
+  - board: nice_nano_v2
+    shield: ergo_s1_dongle
+    snippet: studio-rpc-usb-uart
+    cmake-args: -DCONFIG_ZMK_STUDIO=y -DCONFIG_ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING=y
+    artifact-name: ergo_s1_dongle
+  - board: nice_nano_v2
+    shield: ergo_s1_left
+    cmake-args: -DCONFIG_ZMK_SPLIT_ROLE_CENTRAL=n
+    artifact-name: ergo_s1_left_peripheral
+  - board: nice_nano_v2
+    shield: ergo_s1_right
+    artifact-name: ergo_s1_right
+  - board: nice_nano_v2
+    shield: settings_reset
+    artifact-name: settings_reset
+
+  # ---------- Standalone mode (left half is central) ----------
+  # - board: nice_nano_v2
+  #   shield: ergo_s1_left
+  #   snippet: studio-rpc-usb-uart
+  #   cmake-args: -DCONFIG_ZMK_STUDIO=y
+  #   artifact-name: ergo_s1_left_central
+  # (the ergo_s1_right build above is the same in both modes)
