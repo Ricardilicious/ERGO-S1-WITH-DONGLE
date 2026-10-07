@@ -1,0 +1,14 @@
+file_format: "1"
+id: ergo_s1
+name: Ergo S1
+type: shield
+url: https://github.com/zmkfirmware/zmk
+requires: [pro_micro]
+features:
+  - keys
+  - display
+  - studio
+siblings:
+  - ergo_s1_left
+  - ergo_s1_right
+  - ergo_s1_dongle

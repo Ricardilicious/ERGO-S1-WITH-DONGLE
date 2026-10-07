@@ -1,0 +1,30 @@
+/*
+ * Ergo S1 — shared hardware definition for both halves.
+ * nice!nano v2, no display. Spare pins: 0, 1, 2, 3, 10, 16.
+ * Diodes: one per switch, band toward the row wire -> col2row.
+ */
+
+#include "ergo_s1-layouts.dtsi"
+
+/ {
+    chosen {
+        zmk,kscan = &kscan0;
+        zmk,physical-layout = &ergo_s1_layout;
+    };
+
+    kscan0: kscan0 {
+        compatible = "zmk,kscan-gpio-matrix";
+        diode-direction = "col2row";
+        wakeup-source;
+
+        row-gpios
+            = <&pro_micro 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R0 number row */
+            , <&pro_micro 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R1 top row    */
+            , <&pro_micro 19 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R2 home row   */
+            , <&pro_micro 18 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R3 lower row  */
+            , <&pro_micro 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R4 bottom row (C1-C4) */
+            , <&pro_micro 14 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>  /* R5 thumb cluster */
+            ;
+        /* col-gpios are set per half in the overlays */
+    };
+};

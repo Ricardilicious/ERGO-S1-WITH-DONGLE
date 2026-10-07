@@ -1,0 +1,18 @@
+#include "ergo_s1.dtsi"
+
+/* Right half occupies global columns 6..11 */
+&default_transform {
+    col-offset = <6>;
+};
+
+/* Listed inner -> outer so global col 6 = C5 (innermost) and col 11 = C0 (outermost). */
+&kscan0 {
+    col-gpios
+        = <&pro_micro 9 GPIO_ACTIVE_HIGH>  /* C5 -> global col 6  */
+        , <&pro_micro 8 GPIO_ACTIVE_HIGH>  /* C4 -> global col 7  */
+        , <&pro_micro 7 GPIO_ACTIVE_HIGH>  /* C3 -> global col 8  */
+        , <&pro_micro 6 GPIO_ACTIVE_HIGH>  /* C2 -> global col 9  */
+        , <&pro_micro 5 GPIO_ACTIVE_HIGH>  /* C1 -> global col 10 */
+        , <&pro_micro 4 GPIO_ACTIVE_HIGH>  /* C0 -> global col 11 */
+        ;
+};
