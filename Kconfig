@@ -4,6 +4,7 @@ config ERGO_S1_DONGLE_SCREEN
     depends on ZMK_DISPLAY && ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
     select LV_USE_LABEL
     select LV_FONT_MONTSERRAT_12
+    select LV_FONT_MONTSERRAT_16
     select ZMK_WIDGET_LAYER_STATUS
     select ZMK_WPM
     imply LV_USE_THEME_MONO
@@ -11,6 +12,6 @@ config ERGO_S1_DONGLE_SCREEN
 if ERGO_S1_DONGLE_SCREEN
 
 config LV_Z_MEM_POOL_SIZE
-    default 8192
+    default 16384
 
 endif

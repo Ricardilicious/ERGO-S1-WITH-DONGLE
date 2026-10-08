@@ -1,7 +1,7 @@
 # Ergo S1 — ZMK config (v0.3)
 
 Handwired split, 34 keys per half, two nice!nano v2 (no displays),
-plus a third nice!nano as the central ZMK Studio dongle with a 128x32 SSD1306 OLED.
+plus a third nice!nano as the central ZMK Studio dongle with a 0.96" 128x64 SSD1306 OLED.
 
 ## Wiring
 
@@ -36,19 +36,22 @@ TODO once the right half is wired: record which thumb key landed on which column
 
 ## Dongle OLED
 
-128x32 SSD1306 (I2C, 0x3C) on the dongle nice!nano: SDA → D2, SCL → D3, VCC → 3V3 (VCC), GND → GND.
-For a 128x64 panel, edit `ergo_s1_dongle.overlay` (height 64, multiplex-ratio 63, remove `com-sequential`).
+0.96" 128x64 SSD1306 (I2C, 0x3C) on the dongle nice!nano: SDA → D2, SCL → D3, VCC → 3V3 (VCC), GND → GND.
+For a 0.91" 128x32 panel, edit `ergo_s1_dongle.overlay` (height 32, multiplex-ratio 31, add `com-sequential`); the screen layout adapts automatically.
 
-The dongle uses a custom status screen (`src/dongle_status_screen.c`, 128x32):
+The dongle uses a custom status screen (`src/dongle_status_screen.c`). On the 128x64 panel:
 
 ```
-[tiny  ]  L 85%        R 72%
-[keybd ]  USB  42 wpm   Base
+[USB/BT1]                Base
+L [batt] 85%     R [batt] 72%
++-----------------+       42
+| pixel keyboard  |      wpm
++-----------------+
 ```
 
-- Top row: left and right half batteries (`--` when a half isn't connected).
-- Bottom row: a small USB / Bluetooth-profile icon, words per minute, and the active layer.
-- Left: an original pixel keyboard whose keys tap faster as WPM rises, idle when you stop.
+- Output (USB / Bluetooth profile) icon and active layer on top.
+- Left and right half batteries (`--` when a half isn't connected).
+- An original pixel keyboard whose keys tap faster as WPM rises (idle when you stop), plus the WPM number.
 - The first key press on each half tells the screen which connection is left and which is right.
 
 ## Builds (`build.yaml`)
