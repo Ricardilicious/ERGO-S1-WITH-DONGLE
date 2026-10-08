@@ -3,10 +3,10 @@
  * Both halves connect to it as peripherals. No keys of its own (mock kscan).
  * Carries the full physical layout so ZMK Studio can show and edit the keymap.
  *
- * OLED: SSD1306 128x32 on I2C (address 0x3C)
+ * OLED: 0.96" SSD1306 128x64 on I2C (address 0x3C)
  *   SDA -> pro_micro D2 (P0.17)   SCL -> pro_micro D3 (P0.20)
  *   VCC -> 3V3 (VCC pin)          GND -> GND
- * For a 128x64 panel: height = <64>, multiplex-ratio = <63>, and drop com-sequential.
+ * For a 0.91" 128x32 panel instead: height = <32>, multiplex-ratio = <31>, and add com-sequential.
  */
 
 #include "ergo_s1-layouts.dtsi"
@@ -33,14 +33,13 @@
         compatible = "solomon,ssd1306fb";
         reg = <0x3c>;
         width = <128>;
-        height = <32>;
+        height = <64>;
         segment-offset = <0>;
         page-offset = <0>;
         display-offset = <0>;
-        multiplex-ratio = <31>;
+        multiplex-ratio = <63>;
         segment-remap;
         com-invdir;
-        com-sequential;
         inversion-on;
         prechargep = <0x22>;
     };
