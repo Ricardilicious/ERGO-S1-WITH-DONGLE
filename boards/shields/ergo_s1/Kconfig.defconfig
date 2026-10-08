@@ -38,9 +38,14 @@ config BT_MAX_CONN
 config BT_MAX_PAIRED
     default 7
 
-# 128x32 SSD1306 OLED on the dongle
+# 128x32 SSD1306 OLED on the dongle, with the custom status screen
+# (left/right battery, output, layer) from src/dongle_status_screen.c
 config ZMK_DISPLAY
     default y
+
+choice ZMK_DISPLAY_STATUS_SCREEN
+    default ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+endchoice
 
 if ZMK_DISPLAY
 
