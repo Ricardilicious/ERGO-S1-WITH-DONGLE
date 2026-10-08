@@ -39,6 +39,18 @@ TODO once the right half is wired: record which thumb key landed on which column
 128x32 SSD1306 (I2C, 0x3C) on the dongle nice!nano: SDA → D2, SCL → D3, VCC → 3V3 (VCC), GND → GND.
 For a 128x64 panel, edit `ergo_s1_dongle.overlay` (height 64, multiplex-ratio 63, remove `com-sequential`).
 
+The dongle uses a custom status screen (`src/dongle_status_screen.c`, 128x32):
+
+```
+[tiny  ]  L 85%        R 72%
+[keybd ]  USB  42 wpm   Base
+```
+
+- Top row: left and right half batteries (`--` when a half isn't connected).
+- Bottom row: a small USB / Bluetooth-profile icon, words per minute, and the active layer.
+- Left: an original pixel keyboard whose keys tap faster as WPM rises, idle when you stop.
+- The first key press on each half tells the screen which connection is left and which is right.
+
 ## Builds (`build.yaml`)
 
 Dongle mode (default):
@@ -55,7 +67,7 @@ Standalone mode: swap in the commented `ergo_s1_left_central` block; the right h
 ## ZMK Studio
 
 Studio runs on whichever board is central (the dongle, or the left half in standalone mode), over USB.
-Unlock with Fn + Esc (`&studio_unlock`). Three reserved layers are available for adding layers from Studio.
+Studio locking is turned off on the dongle, so it opens without pressing Fn + Esc. Three reserved layers are available for adding layers from Studio.
 
 ## Keymap
 

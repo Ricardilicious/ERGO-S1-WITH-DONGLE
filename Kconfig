@@ -1,0 +1,16 @@
+config ERGO_S1_DONGLE_SCREEN
+    bool "Ergo S1 dongle OLED status screen (batteries, output, WPM, layer, typing animation)"
+    default y if SHIELD_ERGO_S1_DONGLE && ZMK_DISPLAY_STATUS_SCREEN_CUSTOM
+    depends on ZMK_DISPLAY && ZMK_SPLIT_BLE_CENTRAL_BATTERY_LEVEL_FETCHING
+    select LV_USE_LABEL
+    select LV_FONT_MONTSERRAT_12
+    select ZMK_WIDGET_LAYER_STATUS
+    select ZMK_WPM
+    imply LV_USE_THEME_MONO
+
+if ERGO_S1_DONGLE_SCREEN
+
+config LV_Z_MEM_POOL_SIZE
+    default 8192
+
+endif

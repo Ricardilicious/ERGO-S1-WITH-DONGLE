@@ -1,0 +1,6 @@
+# Ergo S1 dongle status screen (shows both halves' batteries)
+if(CONFIG_ERGO_S1_DONGLE_SCREEN)
+  zephyr_library()
+  zephyr_library_include_directories(${APPLICATION_SOURCE_DIR}/include)
+  zephyr_library_sources(src/dongle_status_screen.c)
+endif()
