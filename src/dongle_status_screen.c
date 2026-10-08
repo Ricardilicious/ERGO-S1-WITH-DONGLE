@@ -1,13 +1,14 @@
 /*
- * Ergo S1 dongle status screen for a 128x32 OLED.
+ * Ergo S1 dongle status screen. Adapts to the OLED height:
  *
- *   +--------+---------------------------+
- *   | tiny   | L 85%      R 72%           |
- *   | keyb.  | [USB/BT1]  42 wpm     Base |
- *   +--------+---------------------------+
+ * 128x64 (0.96"):                     128x32 (0.91"):
+ *   [USB/BT1]               Base       [kb]  L 85%      R 72%
+ *   L [batt] 85%   R [batt] 72%        [kb]  [USB] 42 wpm  Base
+ *   +---------------+        42
+ *   | pixel keyb.   |       wpm
+ *   +---------------+
  *
- * Left: a 32x32 pixel keyboard whose keys tap faster as your WPM rises
- * (idle when you stop typing).
+ * The pixel keyboard's keys tap faster as your WPM rises (idle when you stop).
  *
  * Battery labels: ZMK numbers the halves by connection order, which can change
  * between power-ups, so the screen watches key presses and learns which
@@ -38,6 +39,9 @@
 #define SIDE_RIGHT 1
 #define TEXT_X 36
 
+#define DISPLAY_NODE DT_CHOSEN(zephyr_display)
+#define TALL_SCREEN (DT_PROP(DISPLAY_NODE, height) >= 64)
+
 static const lv_font_t *font(void) { return &lv_font_montserrat_12; }
 
 /* ------------------------------------------------------------------ */
@@ -63,16 +67,27 @@ static uint8_t slot_level[NUM_PERIPHERALS];
 static int8_t slot_side[NUM_PERIPHERALS] = {SIDE_LEFT, SIDE_RIGHT};
 static lv_obj_t *side_label[NUM_PERIPHERALS];
 
+static const char *batt_symbol(uint8_t level) {
+    if (level > 90) return LV_SYMBOL_BATTERY_FULL;
+    if (level > 65) return LV_SYMBOL_BATTERY_3;
+    if (level > 35) return LV_SYMBOL_BATTERY_2;
+    if (level > 10) return LV_SYMBOL_BATTERY_1;
+    return LV_SYMBOL_BATTERY_EMPTY;
+}
+
 static void batt_update_cb(struct batt_state state) {
     static const char *names[NUM_PERIPHERALS] = {"L", "R"};
     for (int side = 0; side < NUM_PERIPHERALS; side++) {
         if (side_label[side] == NULL) {
             continue;
         }
-        if (state.level[side] == 0) {
+        uint8_t lvl = state.level[side];
+        if (lvl == 0) {
             lv_label_set_text_fmt(side_label[side], "%s --", names[side]);
+        } else if (TALL_SCREEN) {
+            lv_label_set_text_fmt(side_label[side], "%s %s %u%%", names[side], batt_symbol(lvl), lvl);
         } else {
-            lv_label_set_text_fmt(side_label[side], "%s %u%%", names[side], state.level[side]);
+            lv_label_set_text_fmt(side_label[side], "%s %u%%", names[side], lvl);
         }
     }
 }
@@ -142,6 +157,7 @@ ZMK_SUBSCRIPTION(ergo_out, zmk_ble_active_profile_changed);
 /* ------------------------------------------------------------------ */
 
 static lv_obj_t *wpm_label;
+static lv_obj_t *wpm_unit_label;
 static volatile int current_wpm;
 
 struct wpm_state {
@@ -151,7 +167,11 @@ struct wpm_state {
 static void wpm_update_cb(struct wpm_state st) {
     current_wpm = st.wpm;
     if (wpm_label != NULL) {
-        lv_label_set_text_fmt(wpm_label, "%i wpm", st.wpm);
+        if (wpm_unit_label != NULL) {
+            lv_label_set_text_fmt(wpm_label, "%i", st.wpm); /* tall layout: unit on its own line */
+        } else {
+            lv_label_set_text_fmt(wpm_label, "%i wpm", st.wpm);
+        }
     }
 }
 
@@ -163,7 +183,7 @@ static struct wpm_state wpm_get_state(const zmk_event_t *eh) {
 ZMK_DISPLAY_WIDGET_LISTENER(ergo_wpm, struct wpm_state, wpm_update_cb, wpm_get_state)
 ZMK_SUBSCRIPTION(ergo_wpm, zmk_wpm_state_changed);
 
-/* Tiny keyboard: 3 rows x 5 keys plus a space bar, inside a 32x32 box. */
+/* Tiny keyboard: 3 rows x 5 keys plus a space bar. */
 #define KB_ROWS 3
 #define KB_COLS 5
 #define KB_KEYS (KB_ROWS * KB_COLS + 1) /* last one is the space bar */
@@ -227,16 +247,25 @@ static lv_obj_t *kb_box(lv_obj_t *parent, lv_coord_t x, lv_coord_t y, lv_coord_t
     return o;
 }
 
-static void kb_create(lv_obj_t *screen) {
+static void kb_create(lv_obj_t *screen, lv_coord_t ox, lv_coord_t oy, lv_coord_t kw,
+                      lv_coord_t kh, lv_coord_t gx, lv_coord_t gy) {
     ink = lv_obj_get_style_text_color(screen, LV_PART_MAIN);
 
-    kb_box(screen, 0, 6, 32, 21); /* keyboard case */
+    lv_coord_t inner_w = KB_COLS * kw + (KB_COLS - 1) * gx;
+    lv_coord_t case_w = inner_w + 4;
+    lv_coord_t space_y = oy + 2 + KB_ROWS * (kh + gy);
+    lv_coord_t case_h = (space_y - oy) + kh - 1 + 3;
+
+    kb_box(screen, ox, oy, case_w, case_h); /* keyboard case */
     for (int r = 0; r < KB_ROWS; r++) {
         for (int c = 0; c < KB_COLS; c++) {
-            kb_key[r * KB_COLS + c] = kb_box(screen, 2 + c * 6, 8 + r * 4, 4, 3);
+            kb_key[r * KB_COLS + c] =
+                kb_box(screen, ox + 2 + c * (kw + gx), oy + 2 + r * (kh + gy), kw, kh);
         }
     }
-    kb_key[KB_KEYS - 1] = kb_box(screen, 8, 21, 16, 3); /* space bar */
+    /* space bar spans the middle three key columns */
+    kb_key[KB_KEYS - 1] =
+        kb_box(screen, ox + 2 + (kw + gx), space_y, 3 * kw + 2 * gx, kh - 1);
 
     lv_timer_create(kb_timer_cb, 40, NULL);
 }
@@ -255,26 +284,46 @@ static lv_obj_t *text_label(lv_obj_t *screen, lv_align_t align, lv_coord_t x, lv
     return l;
 }
 
-lv_obj_t *zmk_display_status_screen(void) {
-    lv_obj_t *screen = lv_obj_create(NULL);
-
-    kb_create(screen);
-
-    /* top row: batteries */
-    side_label[SIDE_LEFT] = text_label(screen, LV_ALIGN_TOP_LEFT, TEXT_X, 0);
-    side_label[SIDE_RIGHT] = text_label(screen, LV_ALIGN_TOP_RIGHT, 0, 0);
-
-    /* bottom row: output icon, wpm, layer */
-    output_label = text_label(screen, LV_ALIGN_BOTTOM_LEFT, TEXT_X, 0);
-    wpm_label = text_label(screen, LV_ALIGN_BOTTOM_LEFT, TEXT_X + 20, 0);
-
+static void layer_create(lv_obj_t *screen, lv_coord_t width, lv_align_t align) {
     zmk_widget_layer_status_init(&layer_status_widget, screen);
     lv_obj_t *layer = zmk_widget_layer_status_obj(&layer_status_widget);
     lv_obj_set_style_text_font(layer, font(), LV_PART_MAIN);
-    lv_obj_set_width(layer, 34);
+    lv_obj_set_width(layer, width);
     lv_label_set_long_mode(layer, LV_LABEL_LONG_CLIP);
     lv_obj_set_style_text_align(layer, LV_TEXT_ALIGN_RIGHT, LV_PART_MAIN);
-    lv_obj_align(layer, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+    lv_obj_align(layer, align, 0, 0);
+}
+
+lv_obj_t *zmk_display_status_screen(void) {
+    lv_obj_t *screen = lv_obj_create(NULL);
+
+    if (TALL_SCREEN) {
+        /* 128x64: output + layer / batteries / keyboard + WPM */
+        output_label = text_label(screen, LV_ALIGN_TOP_LEFT, 0, 0);
+        layer_create(screen, 80, LV_ALIGN_TOP_RIGHT);
+
+        side_label[SIDE_LEFT] = text_label(screen, LV_ALIGN_TOP_LEFT, 0, 16);
+        side_label[SIDE_RIGHT] = text_label(screen, LV_ALIGN_TOP_RIGHT, 0, 16);
+
+        kb_create(screen, 0, 34, 9, 5, 2, 1); /* 51 x 29 px keyboard */
+
+        wpm_label = lv_label_create(screen);
+        lv_obj_set_style_text_font(wpm_label, &lv_font_montserrat_16, LV_PART_MAIN);
+        lv_label_set_text(wpm_label, "");
+        lv_obj_align(wpm_label, LV_ALIGN_BOTTOM_RIGHT, 0, -14);
+        wpm_unit_label = text_label(screen, LV_ALIGN_BOTTOM_RIGHT, 0, 0);
+        lv_label_set_text(wpm_unit_label, "wpm");
+    } else {
+        /* 128x32: keyboard on the left, two text rows on the right */
+        kb_create(screen, 0, 6, 4, 3, 2, 1);
+
+        side_label[SIDE_LEFT] = text_label(screen, LV_ALIGN_TOP_LEFT, TEXT_X, 0);
+        side_label[SIDE_RIGHT] = text_label(screen, LV_ALIGN_TOP_RIGHT, 0, 0);
+
+        output_label = text_label(screen, LV_ALIGN_BOTTOM_LEFT, TEXT_X, 0);
+        wpm_label = text_label(screen, LV_ALIGN_BOTTOM_LEFT, TEXT_X + 20, 0);
+        layer_create(screen, 34, LV_ALIGN_BOTTOM_RIGHT);
+    }
 
     ergo_batt_init();
     ergo_out_init();
